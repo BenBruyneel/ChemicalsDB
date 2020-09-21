@@ -77,16 +77,20 @@ if (!file.exists(paste(c(config.data[2],"/",config.data[3]),collapse = ""))){
 # load the chemical database into the application
 chemicals <- chemicalsLoad()
 
-# prepare
+# prepare the choices for fields Suppliers, Units, etc
 allSuppliers <- sort(unique(chemicals$Supplier))
 allUnits     <- sort(unique(chemicals$Units))
 allCategory  <- sort(unique(chemicals$Category))
 allLocation  <- sort(unique(chemicals$Location))
 
+# needed for some of the question/answer logic of the administration page
 question <- ""
 
+# save the names of the files in the data directory  for the administration page
 filesPresent <- dir(path = config.data[2])
 
+# function to create a data.frame with correct fields/columns
+# needs 'stringsAsFactors = FALSE' for R < 4.0
 createChemicalTable <- function(
                                 Chemical.name = as.character(),
                                 SDS.sheet = as.character(),
@@ -124,6 +128,7 @@ createChemicalTable <- function(
         return(df)
 }
 
+# needed for history file (if doesn't exist)
 emptyTable <- createChemicalTable(
     Chemical.name = as.character(NA),
     SDS.sheet = as.character(NA),
@@ -143,9 +148,10 @@ emptyTable <- createChemicalTable(
     exitDate = as.character(NA)
 )[-1,]
 
+# in memory table of deleted records (= history)
 deletedData <- emptyTable
 
-# if file for history list doesn't exist, then create and remove doubles (non-unique variable/column'order.code')
+# if file for history table doesn't exist, then create on disk, otherwise load existing file
 if (!file.exists(paste(c(config.data[2],"/",config.data[4]),collapse = ""))){
     chemicalsSave(fileName = paste(c(config.data[2],"/",config.data[4]),collapse = ""),
                   chemical.data = deletedData)
@@ -153,16 +159,7 @@ if (!file.exists(paste(c(config.data[2],"/",config.data[4]),collapse = ""))){
     deletedData <- chemicalsLoad(fileName = config.data[4])
 }
 
-
-labelMandatory <- function(label) {
-    tagList(
-        label,
-        span("*", class = "mandatory_star")
-    )
-}
-
-appCSS <- ".mandatory_star { color: red; }"
-
+# start of shiny ui
 ui <- fluidPage(
     
     shinyjs::useShinyjs(),
