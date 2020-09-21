@@ -521,26 +521,33 @@ server <- function(input, output, session) {
     
     rv <- reactiveValues()
     
-    # these 
+    # these 3 variables are used to keep track of changes made to the chemicals database
     rv$addCounter    <- 0
     rv$editCounter   <- 0
     rv$deleteCounter <- 0
     
+    # the databases that get displayed and changed in memory
+    # ONLY when the 'write'  button is clicked are the in memory databases updated and written to disk
     rv$chemicals <- chemicals
     rv$ordering <- ordering
     rv$history <- deletedData
     
+    # be able to interactively add Suppliers, Units, etc
     rv$allSuppliers <- sort(unique(chemicals$Supplier))
     rv$allUnits     <- sort(unique(chemicals$Units))
     rv$allCategory  <- sort(unique(chemicals$Category))
     rv$allLocation  <- sort(unique(chemicals$Location))
     
+    # the filename of the database --> via the administration page it was possible to change this
     rv$fileName <- config.data[1]
     
+    # for the administration page logic, not in use at present
     rv$answer <- FALSE
     
+    # administration page, not in use
     rv$filesPresent <- filesPresent
     
+    # show the chemicals database and allow searching, selection (1 row at a time) etc
     output$showTable <- renderDataTable({
         DT::datatable(rv$chemicals[, input$show_cols], options = list(lengthMenu = c(25,150,250),
                                                                       pageLength = 25,
@@ -550,8 +557,10 @@ server <- function(input, output, session) {
                       selection = list(mode = "single"))#, rownames = FALSE)
     }, server = FALSE)
     
+    # for updating interactively
     showTableProxy <- dataTableProxy("showTable")
     
+    # next 4 elements are for showing the current Suppliers, Units, etc
     output$showSuppliers <- renderDataTable({
         DT::datatable(data.frame(Suppier = rv$allSuppliers, stringsAsFactors = FALSE),
                       options = list(lengthMenu = c(10,25,100),
@@ -588,7 +597,9 @@ server <- function(input, output, session) {
                       selection = list(mode = "single"))
     }, server = FALSE)
     
-    
+    # this is what happens when the add-button in the edit-tab is clicked
+    # note: there's no real checks on validity of the data, but it's also
+    #       relatively easy to delete/edit records in case of mistakes
     observeEvent(input$submit, {
         for (counter in 1:(input$records)){
             rv$chemicals <- bind_rows(
@@ -618,6 +629,7 @@ server <- function(input, output, session) {
         }
     })
     
+    # elements for the counters on the edit page
     output$addStatus <- renderText({
         paste(toString(rv$addCounter)," record(s) added", sep = "")
     })
@@ -631,16 +643,19 @@ server <- function(input, output, session) {
     output$deleteStatus <- renderText({
         paste(toString(rv$deleteCounter)," record(s) deleted", sep = "")
     })
-
+    
+    # element that shows which row/record in the chemicals table is selected (if any)
     output$whichRow <- renderText({
         paste("Selected row : ",toString(input$showTable_rows_selected[1]), sep = "")
     })
     
+    # to clear the row selected (row remains intact, just isn't in 'selected' state anymore)
     clearSelection <- function(){
         showTableProxy %>% selectRows(NULL)
         showTableProxy %>% selectColumns(NULL)
     }
     
+    # empties the elements of the form
     clearForm <- function(){
         updateTextInput(session, inputId = "Chemical.name", value = "")
         updateSelectInput(session, inputId = "SDS.sheet", selected = "Available")
@@ -660,6 +675,8 @@ server <- function(input, output, session) {
         updateDateInput(session, inputId = "enterDate", value = NA)
     }
     
+    # what happens when a record/row in the main table (chemicals) is selected:
+    # fills the edit-form with the values of the selected row/record
     observeEvent(input$showTable_rows_selected,{
         if (!identical(input$showTable_rows_selected, NULL)){
             updateTextInput(session, inputId = "Chemical.name", 
@@ -700,6 +717,7 @@ server <- function(input, output, session) {
         }
     })
     
+    # shows the order database/sheet
     output$orderingTable <- renderDataTable({
         DT::datatable(rv$ordering[, input$show_cols_ordering], options = list(lengthMenu = c(25,150,250),
                                                                               pageLength = 25,
@@ -709,6 +727,7 @@ server <- function(input, output, session) {
                       selection = list(mode = "none"))#, rownames = FALSE)
     }, server = FALSE)
     
+    # shows the history database/sheet
     output$historyTable <- renderDataTable({
         DT::datatable(rv$history[, input$show_cols_history], options = list(lengthMenu = c(25,150,250),
                                                                               pageLength = 25,
@@ -717,12 +736,15 @@ server <- function(input, output, session) {
                                                                               stateSave = TRUE),
                       selection = list(mode = "none"))#, rownames = FALSE)
     }, server = FALSE)
-
+    
+    # what happens when clear-button (edit form) is clicked
     observeEvent(input$clear,{
         clearSelection()
         clearForm()
     })
     
+    # what happens when a record is first selected, then edited and finally saved:
+    # the original record is overwritten
     observeEvent(input$save,{
         if (!identical(input$showTable_rows_selected, NULL)){
             rv$chemicals[input$showTable_rows_selected[1],] <- createChemicalTable(
@@ -751,6 +773,7 @@ server <- function(input, output, session) {
         }
     })
     
+    # what happens when delete button is clicked ,deletes the selected record/row
     observeEvent(input$delete,{
         if (!identical(input$showTable_rows_selected, NULL)){
             temp <- input$showTable_rows_selected[1]
@@ -765,6 +788,9 @@ server <- function(input, output, session) {
         }
     })
     
+    # what happens when the update button in the (ordering tab) is pressed
+    # in case the chemicals (or ordering) database is edited outside this application
+    # see also manual
     observeEvent(input$order_db_update,{
         currentCode <- chemicals %>% distinct(Order.code, Lot.nr, .keep_all = TRUE)
         # new Order.code's 
@@ -782,6 +808,7 @@ server <- function(input, output, session) {
         }
     })
     
+    # next 4 elements define what happens when a Supplier, Units, etc is added
     observeEvent(input$addSupplier,{
         if (!(nchar(input$addSupplierV) == 0) & !(input$addSupplierV %in% rv$allSuppliers)){
             rv$allSuppliers <- sort(append(rv$allSuppliers, input$addSupplierV))
@@ -822,8 +849,10 @@ server <- function(input, output, session) {
         }
     })
     
+    #  ---- administration page ---- not active !!
     output$fileName <- renderText({paste("Current database: ",rv$fileName, sep = "")})
-    
+
+    #  ---- administration page ---- not active !!
     output$fileList <- renderDataTable({
         DT::datatable(data.frame(Files = rv$filesPresent, stringsAsFactors = FALSE),
                       options = list(lengthMenu = c(10,25,100),
@@ -833,8 +862,10 @@ server <- function(input, output, session) {
                       selection = list(mode = "single"))
     }, server = FALSE)
     
+    #  ---- administration page ---- not active !!
     fileListProxy <- dataTableProxy("fileList")
-    
+
+    #  ---- administration page ---- not active !!
     yesNoModal <- function(failed = FALSE, ynquestion = ""){
         modalDialog(
             tags$div(ynquestion,
@@ -846,16 +877,19 @@ server <- function(input, output, session) {
         )
     }
     
+    #  ---- administration page ---- not active !!
     observeEvent(input$yesNoOk,{
         rv$answer <- TRUE
         removeModal()
     })
-    
+
+    #  ---- administration page ---- not active !!
     observeEvent(input$db_reload,{
         question <<- "reset"
         showModal(yesNoModal(ynquestion = "Reset Chemicals Database ?"))
     })
     
+    #  ---- administration page ---- not active !!
     observeEvent(input$db_select,{
         if (!identical(input$fileList_rows_selected, NULL)){
             if (!(rv$filesPresent[input$fileList_rows_selected[1]] %in% c(config.data[3], config.data[1]))){
@@ -865,6 +899,7 @@ server <- function(input, output, session) {
         }
     })
     
+    #  ---- administration page ---- not active !!
     observeEvent(input$db_backup,{
         file.copy(from = paste(c(config.data[2],"/",config.data[1]),collapse = ""),
                   to = paste(
@@ -876,6 +911,7 @@ server <- function(input, output, session) {
         rv$filesPresent <- dir(path = config.data[2])
     })
     
+    #  ---- administration page ---- not active !!
     observeEvent(input$db_delete,{
         if (!identical(input$fileList_rows_selected, NULL)){
             if (!(rv$filesPresent[input$fileList_rows_selected[1]] %in% c(rv$fileName, config.data[3]))){
@@ -885,6 +921,7 @@ server <- function(input, output, session) {
         }
     })
     
+    #  ---- administration page ---- not active !!
     observeEvent(input$db_upload,{
         if (!(input$db_upload$name %in% rv$filesPresent)){
             chemicals.temp <- chemicalsLoad(input$db_upload$datapath)
@@ -893,11 +930,13 @@ server <- function(input, output, session) {
         }
     })
     
+    #  ---- administration page ---- not active !!
     observeEvent(input$db_write,{
         question <<- "write"
         showModal(yesNoModal(ynquestion = "Save Chemicals Database ?"))
     })
     
+    #  ---- administration page ---- not active !!
     output$db_download <- downloadHandler(
         filename = function(){
             paste(c(config.data[2],"/",rv$filesPresent[input$fileList_rows_selected[1]]), collapse = "")
@@ -912,6 +951,7 @@ server <- function(input, output, session) {
         }
     )
     
+    #  ---- administration page ---- not active !!
     observeEvent(input$fileList_rows_selected, ignoreNULL = FALSE,{
         if (identical(input$fileList_rows_selected, NULL)){
             setAdminButtons(enable = FALSE)    
@@ -920,6 +960,7 @@ server <- function(input, output, session) {
         }
     })
     
+    #  ---- administration page ---- not active !!
     observeEvent(rv$answer,{
         if (rv$answer) {
             switch(question,
@@ -982,6 +1023,7 @@ server <- function(input, output, session) {
         }
     })
     
+    #  ---- administration page ---- not active !!
     setAdminButtons <- function(enable = FALSE){
         if (enable){
             shinyjs::enable(id = "db_download")
@@ -996,6 +1038,7 @@ server <- function(input, output, session) {
         }
     }
     
+    #  ---- administration page ---- not active !!
     setAdminButtons(enable = FALSE)
     
 }
