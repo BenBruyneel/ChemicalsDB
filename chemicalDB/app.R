@@ -260,6 +260,10 @@ ui <- fluidPage(
                                                 names(deletedData), selected = names(deletedData)[c(1,4,7,8,9,10,12,14,15,16)])
             ),
             conditionalPanel('input.dataset === "Manual"'),
+            # administration page: not available anymore. Was only meant to have some basic interface
+            # for when using shiny online. Is not complete, was created and abandoned before history
+            # sheet became part of the files/program. Left in the source for future reference/expansion
+            # -----
             # conditionalPanel('input.dataset === "Administration"',
             #                  br(),
             #                  br(),
@@ -491,10 +495,11 @@ ui <- fluidPage(
                              br(),br(),HTML("Basic instructions on the use of this app."),
                              hr(),
                              # HTML("<b>Administration</b>"),
-                             # br(),br(),HTML("This"),
+                             # br(),br(),HTML("This is not available (anymore)"),
                              # hr(),
                              width = "90%", height = "100%")
                          )
+                # see earlier comments (not in use, left in for possible future use )
                 # tabPanel("Administration",
                 #          br(),
                 #          textOutput(outputId = "fileName"),
@@ -511,10 +516,12 @@ ui <- fluidPage(
     )
 )
 
+# server part of the shiny app
 server <- function(input, output, session) {
     
     rv <- reactiveValues()
     
+    # these 
     rv$addCounter    <- 0
     rv$editCounter   <- 0
     rv$deleteCounter <- 0
