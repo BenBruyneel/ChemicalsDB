@@ -14,12 +14,12 @@ library(tools)
 # [1] = main database, [2] = (relative) directory where the sheets are located
 # [3] = ordering database, [4] = history database
 # read the configuration file
-readConfig <- function(fileName = "ChemicalDB.cfg"){
+readConfig <- function(fileName = "chemicalDB.cfg"){
     return(readLines(fileName, warn = FALSE))
 }
 
 # write the configuration file (not used)
-writeConfig <- function(fileName = "ChemicalDB.cfg"){
+writeConfig <- function(fileName = "chemicalDB.cfg"){
     writeLines(config.data, fileName)
 }
 
@@ -163,7 +163,6 @@ if (!file.exists(paste(c(config.data[2],"/",config.data[4]),collapse = ""))){
 ui <- fluidPage(
     
     shinyjs::useShinyjs(),
-    shinyjs::inlineCSS(appCSS),
     
     titlePanel("Chemicals MS Group"),
     
