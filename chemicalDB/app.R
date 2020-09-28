@@ -124,7 +124,7 @@ createChemicalTable <- function(
                      Comments = Comments,
                      entryDate = entryDate,
                      exitDate = exitDate,
-                     stringsAsFactors = FALSE)
+                     stringsAsFactors = FALSE) # in case of R  version < 4.
         return(df)
 }
 
@@ -259,9 +259,10 @@ ui <- fluidPage(
                                                 names(deletedData), selected = names(deletedData)[c(1,4,7,8,9,10,12,14,15,16)])
             ),
             conditionalPanel('input.dataset === "Manual"'),
-            # administration page: not available anymore. Was only meant to have some basic interface
-            # for when using shiny online. Is not complete, was created and abandoned before history
-            # sheet became part of the files/program. Left in the source for future reference/expansion
+            # administration page: not available anymore. This was only meant to have some basic interface
+            # for when using shiny online (with no direct access to the files. Is not complete, was created
+            # and abandoned before history sheet became part of the files/program. Left in the source for
+            # future reference/expansion
             # -----
             # conditionalPanel('input.dataset === "Administration"',
             #                  br(),
@@ -448,7 +449,7 @@ ui <- fluidPage(
                 tabPanel("History",
                          br(),
                          dataTableOutput('historyTable')),
-                tabPanel("Manual",
+                tabPanel("Manual",  # essentially a text-only page to serve as a (limited/basic) manual
                          box(
                              br(),br(),HTML("<u><b>Chemicals MS Group</b></u>"),
                              br(),br(),HTML("<b>Database</b>"),
@@ -628,7 +629,8 @@ server <- function(input, output, session) {
         }
     })
     
-    # elements for the counters on the edit page
+    # elements for the counters on the edit page, they serve to show the edits made to the database
+    # in memory. When the database is written to disk, these values a reset
     output$addStatus <- renderText({
         paste(toString(rv$addCounter)," record(s) added", sep = "")
     })
@@ -698,7 +700,7 @@ server <- function(input, output, session) {
                             value = rv$chemicals$Order.code[input$showTable_rows_selected[1]])
             updateTextInput(session, inputId = "Lotnr", 
                             value = rv$chemicals$Lot.nr[input$showTable_rows_selected[1]])
-            # note trick to prevent having to do conversions
+            # note trick to prevent having to do (date-)conversions
             updateTextInput(session, inputId = "Expiry.date", 
                             value = rv$chemicals$Expiry.date[input$showTable_rows_selected[1]])
             updateTextInput(session, inputId = "Category", 
@@ -707,7 +709,7 @@ server <- function(input, output, session) {
                             value = rv$chemicals$Location[input$showTable_rows_selected[1]])
             updateTextInput(session, inputId = "Comment", 
                             value = rv$chemicals$comments[input$showTable_rows_selected[1]])
-            # note trick to prevent having to do conversions
+            # note trick to prevent having to do (date-)conversions
             updateTextInput(session, inputId = "enterDate", 
                             value = rv$chemicals$entryDate[input$showTable_rows_selected[1]])
             
@@ -736,7 +738,7 @@ server <- function(input, output, session) {
                       selection = list(mode = "none"))#, rownames = FALSE)
     }, server = FALSE)
     
-    # what happens when clear-button (edit form) is clicked
+    # what happens when the clear-button (edit form) is clicked
     observeEvent(input$clear,{
         clearSelection()
         clearForm()
@@ -745,7 +747,7 @@ server <- function(input, output, session) {
     # what happens when a record is first selected, then edited and finally saved:
     # the original record is overwritten
     observeEvent(input$save,{
-        if (!identical(input$showTable_rows_selected, NULL)){
+        if (!identical(input$showTable_rows_selected, NULL)){  # only works if a row/record is selected!
             rv$chemicals[input$showTable_rows_selected[1],] <- createChemicalTable(
                 Chemical.name = input$Chemical.name,
                 SDS.sheet = input$SDS.sheet,
@@ -774,7 +776,7 @@ server <- function(input, output, session) {
     
     # what happens when delete button is clicked ,deletes the selected record/row
     observeEvent(input$delete,{
-        if (!identical(input$showTable_rows_selected, NULL)){
+        if (!identical(input$showTable_rows_selected, NULL)){ # only works when a record/row is selected
             temp <- input$showTable_rows_selected[1]
             clearSelection()
             clearForm()
@@ -849,9 +851,11 @@ server <- function(input, output, session) {
     })
     
     #  ---- administration page ---- not active !!
+    # shows the current database filename
     output$fileName <- renderText({paste("Current database: ",rv$fileName, sep = "")})
 
     #  ---- administration page ---- not active !!
+    # shows files in the current (data-)directory
     output$fileList <- renderDataTable({
         DT::datatable(data.frame(Files = rv$filesPresent, stringsAsFactors = FALSE),
                       options = list(lengthMenu = c(10,25,100),
@@ -862,9 +866,11 @@ server <- function(input, output, session) {
     }, server = FALSE)
     
     #  ---- administration page ---- not active !!
+    # to allow interactivity with fileList
     fileListProxy <- dataTableProxy("fileList")
 
     #  ---- administration page ---- not active !!
+    # to be able to get yes/no questions via modal ui
     yesNoModal <- function(failed = FALSE, ynquestion = ""){
         modalDialog(
             tags$div(ynquestion,
@@ -876,19 +882,20 @@ server <- function(input, output, session) {
         )
     }
     
-    #  ---- administration page ---- not active !!
+    # event that invokes the yes/no ui
     observeEvent(input$yesNoOk,{
         rv$answer <- TRUE
         removeModal()
     })
 
-    #  ---- administration page ---- not active !!
+    # question to reset the database in memory (yes/no)
     observeEvent(input$db_reload,{
         question <<- "reset"
         showModal(yesNoModal(ynquestion = "Reset Chemicals Database ?"))
     })
     
     #  ---- administration page ---- not active !!
+    # what to do when file is selected from fileList
     observeEvent(input$db_select,{
         if (!identical(input$fileList_rows_selected, NULL)){
             if (!(rv$filesPresent[input$fileList_rows_selected[1]] %in% c(config.data[3], config.data[1]))){
@@ -899,6 +906,7 @@ server <- function(input, output, session) {
     })
     
     #  ---- administration page ---- not active !!
+    # to initiate a back up of the selected file (from fileList)
     observeEvent(input$db_backup,{
         file.copy(from = paste(c(config.data[2],"/",config.data[1]),collapse = ""),
                   to = paste(
@@ -911,6 +919,7 @@ server <- function(input, output, session) {
     })
     
     #  ---- administration page ---- not active !!
+    # to delete a file in the fileList
     observeEvent(input$db_delete,{
         if (!identical(input$fileList_rows_selected, NULL)){
             if (!(rv$filesPresent[input$fileList_rows_selected[1]] %in% c(rv$fileName, config.data[3]))){
@@ -921,6 +930,7 @@ server <- function(input, output, session) {
     })
     
     #  ---- administration page ---- not active !!
+    # to allow the upload of a file to the data-directory
     observeEvent(input$db_upload,{
         if (!(input$db_upload$name %in% rv$filesPresent)){
             chemicals.temp <- chemicalsLoad(input$db_upload$datapath)
@@ -929,13 +939,14 @@ server <- function(input, output, session) {
         }
     })
     
-    #  ---- administration page ---- not active !!
+    # invokes the yes/no question: should database on disk be overwritten with the database in memory?
     observeEvent(input$db_write,{
         question <<- "write"
         showModal(yesNoModal(ynquestion = "Save Chemicals Database ?"))
     })
     
     #  ---- administration page ---- not active !!
+    # allows the download of a file in fileList (select first!)
     output$db_download <- downloadHandler(
         filename = function(){
             paste(c(config.data[2],"/",rv$filesPresent[input$fileList_rows_selected[1]]), collapse = "")
@@ -951,6 +962,7 @@ server <- function(input, output, session) {
     )
     
     #  ---- administration page ---- not active !!
+    # (de-)activate buttons on administration page when a file is (de-)selected 
     observeEvent(input$fileList_rows_selected, ignoreNULL = FALSE,{
         if (identical(input$fileList_rows_selected, NULL)){
             setAdminButtons(enable = FALSE)    
@@ -959,7 +971,7 @@ server <- function(input, output, session) {
         }
     })
     
-    #  ---- administration page ---- not active !!
+    # logic on what to do with response to (y/n) answer
     observeEvent(rv$answer,{
         if (rv$answer) {
             switch(question,
@@ -1023,6 +1035,7 @@ server <- function(input, output, session) {
     })
     
     #  ---- administration page ---- not active !!
+    # (de-)activate the buttons on the administration page
     setAdminButtons <- function(enable = FALSE){
         if (enable){
             shinyjs::enable(id = "db_download")
@@ -1038,6 +1051,7 @@ server <- function(input, output, session) {
     }
     
     #  ---- administration page ---- not active !!
+    # set initial status of the buttons on the administration page
     setAdminButtons(enable = FALSE)
     
 }
