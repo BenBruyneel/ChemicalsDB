@@ -164,7 +164,7 @@ ui <- fluidPage(
     
     shinyjs::useShinyjs(),
     
-    titlePanel("Chemicals MS Group"),
+    titlePanel("Chemicals Laboratory"),
     
     sidebarLayout(
         sidebarPanel(width = 2,
