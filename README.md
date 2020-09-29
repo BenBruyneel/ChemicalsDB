@@ -26,6 +26,17 @@ Below are a few pictures of the interface.
 ![](img/img002.png)<!-- -->
 
 Note:
-There are the usual comments to most functions/code in the app.R script. The database included <ins>chemicals-lab.xlsx</ins> contains only a few (fake) entries as obviously I cannot publish the database from the workplace. An important step with the original database was cleanup: getting rid of obvious spelling errors, replacing empty excel cells with empty strings (""), etc, etc. It helps the running of the shiny app more smoothly. Also important is that the app will create two extra excel sheets, namely "order" & "history". The first is meant to keep track of chemicals we once ordered, but may order again (anything that was ever put on the list is preserved based on order code & lot number). The "history" sheet is simpler: everytime an entry is deleted from the main excel sheet, it then gets added
+
+There are the usual comments to most functions/code in the app.R script. The database included <ins>chemicals-lab.xlsx</ins> contains only a few (fake) entries as obviously I cannot publish the database from my workplace. An important initial step with the original database was cleanup: getting rid of obvious spelling errors, replacing empty excel cells with empty strings (""), etc, etc. It helps the running of the shiny app more smoothly. Also important is that the app will create two extra excel sheets, namely "order" & "history". The first is meant to keep track of all chemicals we have or once had, but may order again (anything that was ever put on the list is preserved based on order code & lot number). The "history" sheet is simpler: everytime an entry is deleted from the main excel sheet, it then gets added to this sheet. It serves as a sort of historical overview of items we do not have anymore (including lot numbers)
+
+Additonal note:
+
+Originally this was meant to be hosted on a dedicated shiny server at work but this turned out to be a bit problematic, so I decided to use it from the server drives that people in my department have access to anyway. Only thing needed was an installation of R itself and some packages plus a windows shortcut to R telling it to launch the shiny app:
+
+"C:\Program Files\R\R-3.6.3\bin\R.exe" -e "shiny::runApp('N:/Chemical log/application/chemicalDB', launch.browser = TRUE)"
+
+It's far from perfect but works better than working directly with excel. 
+
+Any questions/comments? Let me know...  [Ben Bruyneel](mailto:bruyneel.ben@gmail.com)
 
 ---
