@@ -5,7 +5,7 @@
 
 ---
 
-### <ins>Chemical Database Interface</ins>
+## <ins>Chemical Database Interface</ins>
 
 In the place that I work the inventory of the chemicals we have is stored in an excel sheet. Maybe not the best idea, but well...  that's what's being used.
 
@@ -15,10 +15,14 @@ I'm not planning to write a full guide to the app's inner workings, since it's p
 
 Below are a few pictures of the interface.
 
-### <ins>Main view of the database</ins>
+
+### Main view of the database
+
 ![](img/img001.png)<!-- -->
 
-###<ins>Main edit interface</ins>
+
+### Main edit interface
+
 ![](img/img002.png)<!-- -->
 
 Note:
