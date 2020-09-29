@@ -31,7 +31,7 @@ There are the usual comments to most functions/code in the app.R script. The dat
 
 Additonal note:
 
-Originally this was meant to be hosted on a dedicated shiny server at work but this turned out to be a bit problematic, so I decided to use it from the server drives that people in my department have access to anyway. Only thing needed was an installation of R itself and some packages plus a windows shortcut to R telling it to launch the shiny app:
+Originally this was meant to be hosted on a dedicated shiny server at work but this turned out to be a bit problematic, so I decided to use it from the server drives that people in my department have access to anyway. Only thing needed was the installation of R itself and some packages plus a windows shortcut to R telling it to launch the shiny app:
 
 "C:\Program Files\R\R-3.6.3\bin\R.exe" -e "shiny::runApp('N:/Chemical log/application/chemicalDB', launch.browser = TRUE)"
 
