@@ -35,7 +35,9 @@ Originally this was meant to be hosted on a dedicated shiny server at work but t
 
 "C:\Program Files\R\R-3.6.3\bin\R.exe" -e "shiny::runApp('N:/Chemical log/application/chemicalDB', launch.browser = TRUE)"
 
-It's far from perfect but works better than working directly with excel. 
+Final Note:
+
+I'm well aware that excel together with R & shiny is not the easiest/most convenient way of dealing with an inventory/database. Much more logical would obviously be a proper database with php/sql interface, but as said before they work with excel here and it's not up to me to change that. This shiny app is far from perfect but works a lot nicer than excel. 
 
 Any questions/comments? Let me know...  [Ben Bruyneel](mailto:bruyneel.ben@gmail.com)
 
