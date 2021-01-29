@@ -107,7 +107,8 @@ createChemicalTable <- function(
                                 Location = as.character(),
                                 Comments = as.character(),
                                 entryDate = as.character(),
-                                exitDate = as.character()){
+                                exitDate = as.character(),
+                                AnimalByproduct = as.character()){
     df <- data.frame(Chemical.name = Chemical.name,
                      SDS.sheet = SDS.sheet,
                      CMR = CMR,
@@ -124,6 +125,7 @@ createChemicalTable <- function(
                      Comments = Comments,
                      entryDate = entryDate,
                      exitDate = exitDate,
+                     AnimalByproduct = AnimalByproduct,
                      stringsAsFactors = FALSE) # in case of R  version < 4.
         return(df)
 }
@@ -145,7 +147,8 @@ emptyTable <- createChemicalTable(
     Location = as.character(NA),
     Comments = as.character(NA),
     entryDate = as.character(NA),
-    exitDate = as.character(NA)
+    exitDate = as.character(NA),
+    AnimalByproduct = as.character(NA)
 )[-1,]
 
 # in memory table of deleted records (= history)
@@ -177,8 +180,9 @@ ui <- fluidPage(
             conditionalPanel('input.dataset === "Database"',
                              br(),
                              br(),
-                             br(),
-                             br(),
+                             box(downloadButton("abpDownload", "Animal Byproducts", class = "btn-primary",
+                                              width = "105px"),
+                                 width = "100%", height = "100%"),
                              br(),
                              br(),
                              checkboxGroupInput("show_cols",
@@ -338,9 +342,13 @@ ui <- fluidPage(
                                         )
                              ),
                              fluidRow(
-                                 column(5,
+                                 column(2,
                                         selectInput("CMR", "CMR", selected = "No", choices = c("No","Yes"), width = "100%")
                                  ),
+                                 column(2,
+                                        selectInput("ABP", "Animal Byproduct", selected = "No", choices = c("No","Yes"), width = "100%")
+                                 ),
+                                 column(1),
                                  column(5,
                                         textInput("Number", "Number","", width = "100%")
                                  )
@@ -622,7 +630,8 @@ server <- function(input, output, session) {
                     Comments = input$Comment,
                     entryDate = ifelse(identical(input$enterDate,NA),"",
                                        as.character(input$enterDate)),
-                    exitDate = ""
+                    exitDate = "",
+                    AnimalByproduct = input$abp
                     )
             )
             rv$addCounter <- rv$addCounter + 1
@@ -674,6 +683,7 @@ server <- function(input, output, session) {
         updateTextInput(session, inputId = "Comment", value = "")
         updateNumericInput(session, inputId = "records", value = 1)
         updateDateInput(session, inputId = "enterDate", value = NA)
+        updateSelectInput(session, inputId = "ABP", selected = "No")
     }
     
     # what happens when a record/row in the main table (chemicals) is selected:
@@ -712,6 +722,8 @@ server <- function(input, output, session) {
             # note trick to prevent having to do (date-)conversions
             updateTextInput(session, inputId = "enterDate", 
                             value = rv$chemicals$entryDate[input$showTable_rows_selected[1]])
+            updateTextInput(session, inputId = "ABP", 
+                            value = rv$chemicals$AnimalByproduct[input$showTable_rows_selected[1]])
             
         } else {
             clearForm()
@@ -766,7 +778,8 @@ server <- function(input, output, session) {
                 Comments = input$Comment,
                 entryDate = ifelse(identical(input$enterDate,NA),"",
                                    as.character(input$enterDate)),
-                exitDate = NA
+                exitDate = NA,
+                AnimalByrproduct = input$ABP
             )
             rv$editCounter <- rv$editCounter + 1
             clearSelection()
@@ -1033,6 +1046,26 @@ server <- function(input, output, session) {
             # do nothing
         }
     })
+    
+    output$abpDownload <- downloadHandler(
+        filename = function() {
+            return(paste(c("MsGroup-AnimalByprodcuts_",as.character(Sys.Date()),".xlsx"), collapse = ""))
+        },
+        content = function(file) {
+            chemicalsSave(fileName = file, chemicals %>%
+                              dplyr::filter(AnimalByproduct == "Yes") %>%
+                              dplyr::select(Chemical.name,
+                                            CAS.number,
+                                            Number,
+                                            Amount,
+                                            Units,
+                                            Supplier,
+                                            Order.code,
+                                            Lot.nr,
+                                            Location,
+                                            entryDate))
+        }
+    )
     
     #  ---- administration page ---- not active !!
     # (de-)activate the buttons on the administration page
