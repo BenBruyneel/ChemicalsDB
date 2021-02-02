@@ -779,7 +779,7 @@ server <- function(input, output, session) {
                 entryDate = ifelse(identical(input$enterDate,NA),"",
                                    as.character(input$enterDate)),
                 exitDate = NA,
-                AnimalByrproduct = input$ABP
+                AnimalByproduct = input$ABP
             )
             rv$editCounter <- rv$editCounter + 1
             clearSelection()
