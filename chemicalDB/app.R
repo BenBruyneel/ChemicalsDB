@@ -9,6 +9,7 @@ library(openxlsx)
 library(dplyr)
 library(stringr)
 library(tools)
+library(purrr)
 
 # config.data has the location & names of the sheets needed/used in the application
 # [1] = main database, [2] = (relative) directory where the sheets are located
@@ -92,23 +93,23 @@ filesPresent <- dir(path = config.data[2])
 # function to create a data.frame with correct fields/columns
 # needs 'stringsAsFactors = FALSE' for R < 4.0
 createChemicalTable <- function(
-                                Chemical.name = as.character(),
-                                SDS.sheet = as.character(),
-                                CMR = as.character(),
-                                CAS.number = as.character(),
-                                Number = as.character(),
-                                Amount = as.character(),
-                                Units = as.character(),
-                                Supplier = as.character(),
-                                Order.code = as.character(),
-                                Lot.nr = as.character(),
-                                Expiry.date = as.character(),
-                                Category = as.character(),
-                                Location = as.character(),
-                                Comments = as.character(),
-                                entryDate = as.character(),
-                                exitDate = as.character(),
-                                AnimalByproduct = as.character()){
+    Chemical.name = as.character(),
+    SDS.sheet = as.character(),
+    CMR = as.character(),
+    CAS.number = as.character(),
+    Number = as.character(),
+    Amount = as.character(),
+    Units = as.character(),
+    Supplier = as.character(),
+    Order.code = as.character(),
+    Lot.nr = as.character(),
+    Expiry.date = as.character(),
+    Category = as.character(),
+    Location = as.character(),
+    Comments = as.character(),
+    entryDate = as.character(),
+    exitDate = as.character(),
+    AnimalByproduct = as.character()){
     df <- data.frame(Chemical.name = Chemical.name,
                      SDS.sheet = SDS.sheet,
                      CMR = CMR,
@@ -127,7 +128,7 @@ createChemicalTable <- function(
                      exitDate = exitDate,
                      AnimalByproduct = AnimalByproduct,
                      stringsAsFactors = FALSE) # in case of R  version < 4.
-        return(df)
+    return(df)
 }
 
 # needed for history file (if doesn't exist)
@@ -177,349 +178,349 @@ ui <- fluidPage(
                                 border-style : solid;
                                 border-color : rgba(255,255,255,1);}
                      </style>'),
-            conditionalPanel('input.dataset === "Database"',
-                             br(),
-                             br(),
-                             box(downloadButton("abpDownload", "Animal Byproducts", class = "btn-primary",
-                                              width = "105px"),
-                                 width = "100%", height = "100%"),
-                             br(),
-                             br(),
-                             checkboxGroupInput("show_cols",
-                                                "Show Columns:",
-                                                names(chemicals), selected = names(chemicals)[c(1,4,5:7,12:13)])
-                             ),
-            conditionalPanel('input.dataset === "Edit"',
-                             br(),
-                             br(),
-                             br(),
-                             br(),
-                             br(),
-                             box(actionButton("submit", "Add", class = "btn-primary",
-                                              width = "105px"), 
-                                 width = "100%", height = "100%"),
-                             br(),
-                             box(actionButton("save", "Save", class = "btn-primary",
-                                              width = "105px"),
-                                 width = "100%", height = "100%"),
-                             br(),
-                             box(actionButton("delete", "Delete", class = "btn-primary",
-                                              width = "105px"),
-                                 width = "100%", height = "100%"),
-                             br(),
-                             box(actionButton("clear", "Clear ", class = "btn-primary",
-                                              width = "105px"),
-                                 width = "100%", height = "100%"),
-                             br(),
-                             br(),
-                             box(textOutput("addStatus"),
-                                 width = "100%", height = "100%"),
-                             br(),
-                             box(textOutput("editStatus"),
-                                 width = "100%", height = "100%"),
-                             br(),
-                             box(textOutput("deleteStatus"),
-                                 width = "100%", height = "100%"),
-                             hr(),
-                             box(
-                                 HTML("<b><u>Database</u></b>"),
-                                 br(),
-                                 br(),
-                                 box(actionButton("db_reload"  , "Reload data", class = "btn-primary",
-                                                  width = "105px"),
-                                     width = "100%", height = "100%"),
-                                 br(),
-                                 box(actionButton("db_write"   , "Write data", class = "btn-primary" , width = "105px"),
-                                     width = "100%", height = "100%"),
-                                 width = "100%", height = "100%"),
-                             hr()
-                             ),
-            conditionalPanel('input.dataset === "Modify"'),
-            conditionalPanel('input.dataset === "Ordering"',
-                             br(),
-                             br(),
-                             br(),
-                             br(),
-                             br(),
-                             br(),
-                             checkboxGroupInput("show_cols_ordering",
-                                                "Show Columns:",
-                                                names(ordering), selected = names(ordering)[c(1,4,7,8,9,10,11,12,14)]),
-                             br(),
-                             box(actionButton("order_db_update", "Update", class = "btn-primary",
-                                              width = "105px"), 
-                                 width = "100%", height = "100%"),
-                             br()
-            ),
-            conditionalPanel('input.dataset === "History"',
-                             br(),
-                             br(),
-                             br(),
-                             br(),
-                             br(),
-                             br(),
-                             checkboxGroupInput("show_cols_history",
-                                                "Show Columns:",
-                                                names(deletedData), selected = names(deletedData)[c(1,4,7,8,9,10,12,14,15,16)])
-            ),
-            conditionalPanel('input.dataset === "Manual"'),
-            # administration page: not available anymore. This was only meant to have some basic interface
-            # for when using shiny online (with no direct access to the files. Is not complete, was created
-            # and abandoned before history sheet became part of the files/program. Left in the source for
-            # future reference/expansion
-            # -----
-            # conditionalPanel('input.dataset === "Administration"',
-            #                  br(),
-            #                  br(),
-            #                  # box(actionButton("db_reload"  , "reload  ", class = "btn-primary", width = "105px"),
-            #                  #     width = "100%", height = "100%"),
-            #                  # br(),
-            #                  # box(actionButton("db_write"   , "Write   ", class = "btn-primary" , width = "105px"),
-            #                  #     width = "100%", height = "100%"),
-            #                  # hr(),
-            #                  box(actionButton("db_select"  , "Select  ", class = "btn-primary", width = "105px"),
-            #                      width = "100%", height = "100%"),
-            #                  br(),
-            #                  box(downloadButton("db_download", "Download", class = "btn-primary"),
-            #                      width = "100%", height = "100%"),
-            #                  br(),
-            #                  box(fileInput("db_upload","Upload",multiple = FALSE, accept = c("*.csv","*.xlsx"),
-            #                            width = "105px"),
-            #                      width = "100%", height = "100%"),
-            #                  hr(),
-            #                  box(actionButton("db_backup"  , "Back Up ", class = "btn-primary", width = "105px"),
-            #                      width = "100%", height = "100%"),
-            #                  br(),
-            #                  box(actionButton("db_delete"  , "Delete  ", class = "btn-primary" , width = "105px"),
-            #                      width = "100%", height = "100%"),
-            #                  br()
-            #                 )
+                     conditionalPanel('input.dataset === "Database"',
+                                      br(),
+                                      br(),
+                                      box(downloadButton("abpDownload", "Animal Byproducts", class = "btn-primary",
+                                                         width = "105px"),
+                                          width = "100%", height = "100%"),
+                                      br(),
+                                      br(),
+                                      checkboxGroupInput("show_cols",
+                                                         "Show Columns:",
+                                                         names(chemicals), selected = names(chemicals)[c(1,4,5:7,12:13)])
+                     ),
+                     conditionalPanel('input.dataset === "Edit"',
+                                      br(),
+                                      br(),
+                                      br(),
+                                      br(),
+                                      br(),
+                                      box(actionButton("submit", "Add", class = "btn-primary",
+                                                       width = "105px"), 
+                                          width = "100%", height = "100%"),
+                                      br(),
+                                      box(actionButton("save", "Save", class = "btn-primary",
+                                                       width = "105px"),
+                                          width = "100%", height = "100%"),
+                                      br(),
+                                      box(actionButton("delete", "Delete", class = "btn-primary",
+                                                       width = "105px"),
+                                          width = "100%", height = "100%"),
+                                      br(),
+                                      box(actionButton("clear", "Clear ", class = "btn-primary",
+                                                       width = "105px"),
+                                          width = "100%", height = "100%"),
+                                      br(),
+                                      br(),
+                                      box(textOutput("addStatus"),
+                                          width = "100%", height = "100%"),
+                                      br(),
+                                      box(textOutput("editStatus"),
+                                          width = "100%", height = "100%"),
+                                      br(),
+                                      box(textOutput("deleteStatus"),
+                                          width = "100%", height = "100%"),
+                                      hr(),
+                                      box(
+                                          HTML("<b><u>Database</u></b>"),
+                                          br(),
+                                          br(),
+                                          box(actionButton("db_reload"  , "Reload data", class = "btn-primary",
+                                                           width = "105px"),
+                                              width = "100%", height = "100%"),
+                                          br(),
+                                          box(actionButton("db_write"   , "Write data", class = "btn-primary" , width = "105px"),
+                                              width = "100%", height = "100%"),
+                                          width = "100%", height = "100%"),
+                                      hr()
+                     ),
+                     conditionalPanel('input.dataset === "Modify"'),
+                     conditionalPanel('input.dataset === "Ordering"',
+                                      br(),
+                                      br(),
+                                      br(),
+                                      br(),
+                                      br(),
+                                      br(),
+                                      checkboxGroupInput("show_cols_ordering",
+                                                         "Show Columns:",
+                                                         names(ordering), selected = names(ordering)[c(1,4,7,8,9,10,11,12,14)]),
+                                      br(),
+                                      box(actionButton("order_db_update", "Update", class = "btn-primary",
+                                                       width = "105px"), 
+                                          width = "100%", height = "100%"),
+                                      br()
+                     ),
+                     conditionalPanel('input.dataset === "History"',
+                                      br(),
+                                      br(),
+                                      br(),
+                                      br(),
+                                      br(),
+                                      br(),
+                                      checkboxGroupInput("show_cols_history",
+                                                         "Show Columns:",
+                                                         names(deletedData), selected = names(deletedData)[c(1,4,7,8,9,10,12,14,15,16)])
+                     ),
+                     conditionalPanel('input.dataset === "Manual"'),
+                     # administration page: not available anymore. This was only meant to have some basic interface
+                     # for when using shiny online (with no direct access to the files. Is not complete, was created
+                     # and abandoned before history sheet became part of the files/program. Left in the source for
+                     # future reference/expansion
+                     # -----
+                     # conditionalPanel('input.dataset === "Administration"',
+                     #                  br(),
+                     #                  br(),
+                     #                  # box(actionButton("db_reload"  , "reload  ", class = "btn-primary", width = "105px"),
+                     #                  #     width = "100%", height = "100%"),
+                     #                  # br(),
+                     #                  # box(actionButton("db_write"   , "Write   ", class = "btn-primary" , width = "105px"),
+                     #                  #     width = "100%", height = "100%"),
+                     #                  # hr(),
+                     #                  box(actionButton("db_select"  , "Select  ", class = "btn-primary", width = "105px"),
+                     #                      width = "100%", height = "100%"),
+                     #                  br(),
+                     #                  box(downloadButton("db_download", "Download", class = "btn-primary"),
+                     #                      width = "100%", height = "100%"),
+                     #                  br(),
+                     #                  box(fileInput("db_upload","Upload",multiple = FALSE, accept = c("*.csv","*.xlsx"),
+                     #                            width = "105px"),
+                     #                      width = "100%", height = "100%"),
+                     #                  hr(),
+                     #                  box(actionButton("db_backup"  , "Back Up ", class = "btn-primary", width = "105px"),
+                     #                      width = "100%", height = "100%"),
+                     #                  br(),
+                     #                  box(actionButton("db_delete"  , "Delete  ", class = "btn-primary" , width = "105px"),
+                     #                      width = "100%", height = "100%"),
+                     #                  br()
+                     #                 )
         ),
         mainPanel(width = 10,
-            tabsetPanel(
-                id = 'dataset',
-                tabPanel("Database",
-                         br(),
-                         dataTableOutput('showTable')),
-                tabPanel("Edit",
-                         br(),
-                         textOutput("whichRow"),
-                         br(),
-                         div(id = "form",
-                             fluidRow(
-                                 column(5,
-                                        textInput("Chemical.name", "Chemical Name", "", width = "100%")),
-                                 column(5,
-                                        selectInput("Supplier", "Supplier",choices = allSuppliers,
-                                                    width = "100%")
-                                        )
-                             ),
-                             fluidRow(
-                                 column(5,
-                                        textInput("CAS.number", "CAS Number", "", width = "100%")
-                                 ),
-                                 column(5,
-                                        textInput("Order.code", "Order #","", width = "100%")
-                                        )
-                             ),
-                             fluidRow(
-                                 column(5,
-                                        selectInput("Category", "Category", choices = allCategory,
-                                                    width = "100%")
-                                 ),
-                                 column(5,
-                                        textInput("Lotnr", "Lot #","", width = "100%")
-                                        )
-                             ),
-                             fluidRow(
-                                 column(5,
-                                        selectInput("SDS.sheet", "SDS sheet", selected = "Available",
-                                                    choices = c("Available", "Not Available"), width = "100%")
-                                 ),
-                                 column(5,
-                                        dateInput("Expiry.date", "Expiry Date",format ="yyyy-mm", startview = "month",
-                                                  weekstart = 0,language = "en-GB", width = "100%", value = NA)
-                                        )
-                             ),
-                             fluidRow(
-                                 column(2,
-                                        selectInput("CMR", "CMR", selected = "No", choices = c("No","Yes"), width = "100%")
-                                 ),
-                                 column(2,
-                                        selectInput("ABP", "Animal Byproduct", selected = "No", choices = c("No","Yes"), width = "100%")
-                                 ),
-                                 column(1),
-                                 column(5,
-                                        textInput("Number", "Number","", width = "100%")
-                                 )
-                             ),
-                             fluidRow(
-                                 column(5,
-                                        selectInput("Location", "Location", choices = allLocation,
-                                                    width = "100%")
-                                 ),
-                                 column(5,
-                                        textInput("Amount", "Amount","", width = "100%")
-                                 )
-                             ),
-                             fluidRow(
-                                 column(5,
-                                        textInput("Comment", "Comment", "", width = "100%")
-                                ),
-                                 column(5,
-                                        selectInput("Units", "Units", "",choices = allUnits,
-                                                    width = "100%")
-                                )
-                             ),
-                             fluidRow(
-                                 column(5,
-                                        numericInput("records", "# of records (only for add)",
-                                                  value = 1, min = 1, max = NA, step = 1,
-                                                  width = "100%")
-                                        ),
-                                 column(5,
-                                        dateInput("enterDate", "Entry Date",format ="yyyy-mm-dd", startview = "month",
-                                                  weekstart = 0,language = "en-GB", width = "100%", value = NULL)
-                                        )
-                             )
-                         )
-                ),
-                tabPanel("Modify",
-                         tabsetPanel(
-                             id = 'modify',
-                             tabPanel('Suppliers',
-                                      br(),
-                                      fluidRow(
-                                          column(5, 
-                                                 dataTableOutput('showSuppliers')
-                                          ),
-                                          column(5,
-                                                 br(),
-                                                 textInput(inputId = "addSupplierV",
-                                                           label = "Add Supplier",
-                                                           value = "",
-                                                           width = "100%"),
-                                                 actionButton("addSupplier", "Add", class = "btn-primary")
-                                          )
-                                          
-                                      )
-                             ),
-                             tabPanel('Categories',
-                                      br(),
-                                      fluidRow(
-                                          column(5,
-                                                 dataTableOutput('showCategories')
-                                          ),
-                                          column(5,
-                                                 br(),
-                                                 textInput(inputId = "addCategoryV",
-                                                           label = "Add Category",
-                                                           value = "",
-                                                           width = "100%"),
-                                                 actionButton("addCategory", "Add", class = "btn-primary"))
-                                      )
-                             ),
-                             tabPanel('Locations',
-                                      br(),
-                                      fluidRow(
-                                          column(5,
-                                                 dataTableOutput('showLocations')
-                                          ),
-                                          column(5,
-                                                 br(),
-                                                 textInput(inputId = "addLocationV",
-                                                           label = "Add Location",
-                                                           value = "",
-                                                           width = "100%"),
-                                                 actionButton("addLocation", "Add", class = "btn-primary"))
-                                      )
-                             ),
-                             tabPanel("Units",
-                                      br(),
-                                      fluidRow(
-                                          column(5,
-                                                 dataTableOutput('showUnits')
-                                          ),
-                                          column(5,
-                                                 br(),
-                                                 textInput(inputId = "addUnitV",
-                                                           label = "Add Unit",
-                                                           value = "",
-                                                           width = "100%"),
-                                                 actionButton("addUnit", "Add", class = "btn-primary"))
-                                      )
-                             )
-                         )
-                         ),
-                tabPanel("Ordering",
-                         br(),
-                         dataTableOutput('orderingTable')),
-                tabPanel("History",
-                         br(),
-                         dataTableOutput('historyTable')),
-                tabPanel("Manual",  # essentially a text-only page to serve as a (limited/basic) manual
-                         box(
-                             br(),br(),HTML("<u><b>Chemicals MS Group</b></u>"),
-                             br(),br(),HTML("<b>Database</b>"),
-                             br(),br(),HTML("Here you can see the chemicals currently in use/stock. 
+                  tabsetPanel(
+                      id = 'dataset',
+                      tabPanel("Database",
+                               br(),
+                               dataTableOutput('showTable')),
+                      tabPanel("Edit",
+                               br(),
+                               textOutput("whichRow"),
+                               br(),
+                               div(id = "form",
+                                   fluidRow(
+                                       column(5,
+                                              textInput("Chemical.name", "Chemical Name", "", width = "100%")),
+                                       column(5,
+                                              selectInput("Supplier", "Supplier",choices = allSuppliers,
+                                                          width = "100%")
+                                       )
+                                   ),
+                                   fluidRow(
+                                       column(5,
+                                              textInput("CAS.number", "CAS Number", "", width = "100%")
+                                       ),
+                                       column(5,
+                                              textInput("Order.code", "Order #","", width = "100%")
+                                       )
+                                   ),
+                                   fluidRow(
+                                       column(5,
+                                              selectInput("Category", "Category", choices = allCategory,
+                                                          width = "100%")
+                                       ),
+                                       column(5,
+                                              textInput("Lotnr", "Lot #","", width = "100%")
+                                       )
+                                   ),
+                                   fluidRow(
+                                       column(5,
+                                              selectInput("SDS.sheet", "SDS sheet", selected = "Available",
+                                                          choices = c("Available", "Not Available"), width = "100%")
+                                       ),
+                                       column(5,
+                                              dateInput("Expiry.date", "Expiry Date",format ="yyyy-mm", startview = "month",
+                                                        weekstart = 0,language = "en-GB", width = "100%", value = NA)
+                                       )
+                                   ),
+                                   fluidRow(
+                                       column(2,
+                                              selectInput("CMR", "CMR", selected = "No", choices = c("No","Yes"), width = "100%")
+                                       ),
+                                       column(2,
+                                              selectInput("ABP", "Animal Byproduct", selected = "No", choices = c("No","Yes"), width = "100%")
+                                       ),
+                                       column(1),
+                                       column(5,
+                                              textInput("Number", "Number","", width = "100%")
+                                       )
+                                   ),
+                                   fluidRow(
+                                       column(5,
+                                              selectInput("Location", "Location", choices = allLocation,
+                                                          width = "100%")
+                                       ),
+                                       column(5,
+                                              textInput("Amount", "Amount","", width = "100%")
+                                       )
+                                   ),
+                                   fluidRow(
+                                       column(5,
+                                              textInput("Comment", "Comment", "", width = "100%")
+                                       ),
+                                       column(5,
+                                              selectInput("Units", "Units", "",choices = allUnits,
+                                                          width = "100%")
+                                       )
+                                   ),
+                                   fluidRow(
+                                       column(5,
+                                              numericInput("records", "# of records (only for add)",
+                                                           value = 1, min = 1, max = NA, step = 1,
+                                                           width = "100%")
+                                       ),
+                                       column(5,
+                                              dateInput("enterDate", "Entry Date",format ="yyyy-mm-dd", startview = "month",
+                                                        weekstart = 0,language = "en-GB", width = "100%", value = NULL)
+                                       )
+                                   )
+                               )
+                      ),
+                      tabPanel("Modify",
+                               tabsetPanel(
+                                   id = 'modify',
+                                   tabPanel('Suppliers',
+                                            br(),
+                                            fluidRow(
+                                                column(5, 
+                                                       dataTableOutput('showSuppliers')
+                                                ),
+                                                column(5,
+                                                       br(),
+                                                       textInput(inputId = "addSupplierV",
+                                                                 label = "Add Supplier",
+                                                                 value = "",
+                                                                 width = "100%"),
+                                                       actionButton("addSupplier", "Add", class = "btn-primary")
+                                                )
+                                                
+                                            )
+                                   ),
+                                   tabPanel('Categories',
+                                            br(),
+                                            fluidRow(
+                                                column(5,
+                                                       dataTableOutput('showCategories')
+                                                ),
+                                                column(5,
+                                                       br(),
+                                                       textInput(inputId = "addCategoryV",
+                                                                 label = "Add Category",
+                                                                 value = "",
+                                                                 width = "100%"),
+                                                       actionButton("addCategory", "Add", class = "btn-primary"))
+                                            )
+                                   ),
+                                   tabPanel('Locations',
+                                            br(),
+                                            fluidRow(
+                                                column(5,
+                                                       dataTableOutput('showLocations')
+                                                ),
+                                                column(5,
+                                                       br(),
+                                                       textInput(inputId = "addLocationV",
+                                                                 label = "Add Location",
+                                                                 value = "",
+                                                                 width = "100%"),
+                                                       actionButton("addLocation", "Add", class = "btn-primary"))
+                                            )
+                                   ),
+                                   tabPanel("Units",
+                                            br(),
+                                            fluidRow(
+                                                column(5,
+                                                       dataTableOutput('showUnits')
+                                                ),
+                                                column(5,
+                                                       br(),
+                                                       textInput(inputId = "addUnitV",
+                                                                 label = "Add Unit",
+                                                                 value = "",
+                                                                 width = "100%"),
+                                                       actionButton("addUnit", "Add", class = "btn-primary"))
+                                            )
+                                   )
+                               )
+                      ),
+                      tabPanel("Ordering",
+                               br(),
+                               dataTableOutput('orderingTable')),
+                      tabPanel("History",
+                               br(),
+                               dataTableOutput('historyTable')),
+                      tabPanel("Manual",  # essentially a text-only page to serve as a (limited/basic) manual
+                               box(
+                                   br(),br(),HTML("<u><b>Chemicals MS Group</b></u>"),
+                                   br(),br(),HTML("<b>Database</b>"),
+                                   br(),br(),HTML("Here you can see the chemicals currently in use/stock. 
                                             Selecting an row will cause the form to be `filled` with
                                             the values in the selected row"),
-                             hr(),
-                             HTML("<b>Edit</b>"),
-                             br(),br(),HTML("This the main page for editing/adding/deleting/etc of
+                                   hr(),
+                                   HTML("<b>Edit</b>"),
+                                   br(),br(),HTML("This the main page for editing/adding/deleting/etc of
                                             rows. Note: no edit/add/etc is final until the database
                                             is written to disk via the <u><i>Write data</i></u> button. The counters
                                             keep track of how many records have been changed in what way.
                                             If there is a need to discard the changes made, then the <u><i>Reload data
                                             </i></u> button."),
-                             br(),br(),HTML("<u><i>Add</i></u> adds the data entered in the form into the database"),
-                                  br(),HTML("<u><i>Save</i></u> overwrites the data into a <u><i>selected row</i></u>
+                                   br(),br(),HTML("<u><i>Add</i></u> adds the data entered in the form into the database"),
+                                   br(),HTML("<u><i>Save</i></u> overwrites the data into a <u><i>selected row</i></u>
                                             in the <u><i>Database</i></u> tab"),
-                                  br(),HTML("<u><i>Delete</i></u> is for the deletion of a row (selected in the
+                                   br(),HTML("<u><i>Delete</i></u> is for the deletion of a row (selected in the
                                             <u><i>Database</i></u> tab)."),
-                                  br(),HTML("<u><i>Clear</i></u> simply clears the data in the form."),
-                             hr(),
-                             HTML("<b>Modify</b>"),
-                             br(),br(),HTML("Here <i>Suppliers</i>,<i>Categories</i>,<i>Locations</i> & <i>Units</i>
+                                   br(),HTML("<u><i>Clear</i></u> simply clears the data in the form."),
+                                   hr(),
+                                   HTML("<b>Modify</b>"),
+                                   br(),br(),HTML("Here <i>Suppliers</i>,<i>Categories</i>,<i>Locations</i> & <i>Units</i>
                                             can be added. Important: an added, but not used <i>Supplier</i> (etc) will
                                             be removed on in the next session. If a record exists with that <i>Supplier</i>
                                             then it will remain present."),
-                             hr(),
-                             HTML("<b>Ordering</b>"),
-                             br(),br(),HTML("This database is automatically maintained and updated with new chemicals with
+                                   hr(),
+                                   HTML("<b>Ordering</b>"),
+                                   br(),br(),HTML("This database is automatically maintained and updated with new chemicals with
                                             <i>new</i> Order code/Lot number combinations. When the 'main' database gets
                                             written to disk, then the same happens to this table."),
-                             br(),br(),HTML("The <u><i>Update</i></u> button is there for the situation when data was
+                                   br(),br(),HTML("The <u><i>Update</i></u> button is there for the situation when data was
                                             added to the chemical database outside of this interface. If clicked it will
                                             check if there are new Order code/Lot number combinations. Important: after
                                             clicking <i>Update</i>, the database should be written!"),
-                             hr(),
-                             HTML("<b>History</b>"),
-                             br(),br(),HTML("The history database is automatically filled with entries that are deleted
+                                   hr(),
+                                   HTML("<b>History</b>"),
+                                   br(),br(),HTML("The history database is automatically filled with entries that are deleted
                                             from the main <i>Chemicals</i> database. Within this application it cannot
                                             be edited."),
-                             hr(),
-                             HTML("<b>Manual</b>"),
-                             br(),br(),HTML("Basic instructions on the use of this app."),
-                             hr(),
-                             # HTML("<b>Administration</b>"),
-                             # br(),br(),HTML("This is not available (anymore)"),
-                             # hr(),
-                             width = "90%", height = "100%")
-                         )
-                # see earlier comments (not in use, left in for possible future use )
-                # tabPanel("Administration",
-                #          br(),
-                #          textOutput(outputId = "fileName"),
-                #          br(),
-                #          hr(),
-                #          fluidRow(
-                #              column(5,
-                #                     dataTableOutput("fileList")
-                #                     )
-                #          ) 
-                # )
-            )
+                                   hr(),
+                                   HTML("<b>Manual</b>"),
+                                   br(),br(),HTML("Basic instructions on the use of this app."),
+                                   hr(),
+                                   # HTML("<b>Administration</b>"),
+                                   # br(),br(),HTML("This is not available (anymore)"),
+                                   # hr(),
+                                   width = "90%", height = "100%")
+                      )
+                      # see earlier comments (not in use, left in for possible future use )
+                      # tabPanel("Administration",
+                      #          br(),
+                      #          textOutput(outputId = "fileName"),
+                      #          br(),
+                      #          hr(),
+                      #          fluidRow(
+                      #              column(5,
+                      #                     dataTableOutput("fileList")
+                      #                     )
+                      #          ) 
+                      # )
+                  )
         )
     )
 )
@@ -589,10 +590,10 @@ server <- function(input, output, session) {
     
     output$showLocations <- renderDataTable({
         DT::datatable(data.frame(Suppier = rv$allLocation, stringsAsFactors = FALSE),
-        options = list(lengthMenu = c(10,25,100),
-                       pageLength = 10,
-                       ordering = FALSE,
-                       stateSave = FALSE),
+                      options = list(lengthMenu = c(10,25,100),
+                                     pageLength = 10,
+                                     ordering = FALSE,
+                                     stateSave = FALSE),
                       selection = list(mode = "single"))
     }, server = FALSE)
     
@@ -623,16 +624,16 @@ server <- function(input, output, session) {
                     Supplier = input$Supplier,
                     Order.code = input$Order.code,
                     Lot.nr = input$Lotnr,
-                    Expiry.date = ifelse(identical(input$Expiry.date,NA),"",
+                    Expiry.date = ifelse(is_empty(input$Expiry.date),"",
                                          gsub("-\\d\\d$","",as.character(input$Expiry.date))),
                     Category = input$Category,
                     Location = input$Location,
                     Comments = input$Comment,
-                    entryDate = ifelse(identical(input$enterDate,NA),"",
+                    entryDate = ifelse(is_empty(input$enterDate),"",
                                        as.character(input$enterDate)),
                     exitDate = "",
-                    AnimalByproduct = input$abp
-                    )
+                    AnimalByproduct = input$ABP
+                )
             )
             rv$addCounter <- rv$addCounter + 1
         }
@@ -644,11 +645,11 @@ server <- function(input, output, session) {
         paste(toString(rv$addCounter)," record(s) added", sep = "")
     })
     
-
+    
     output$editStatus <- renderText({
         paste(toString(rv$editCounter)," record(s) edited", sep = "")
     })
-
+    
     
     output$deleteStatus <- renderText({
         paste(toString(rv$deleteCounter)," record(s) deleted", sep = "")
@@ -743,10 +744,10 @@ server <- function(input, output, session) {
     # shows the history database/sheet
     output$historyTable <- renderDataTable({
         DT::datatable(rv$history[, input$show_cols_history], options = list(lengthMenu = c(25,150,250),
-                                                                              pageLength = 25,
-                                                                              #ordering = FALSE,
-                                                                              orderMulti = TRUE,
-                                                                              stateSave = TRUE),
+                                                                            pageLength = 25,
+                                                                            #ordering = FALSE,
+                                                                            orderMulti = TRUE,
+                                                                            stateSave = TRUE),
                       selection = list(mode = "none"))#, rownames = FALSE)
     }, server = FALSE)
     
@@ -771,12 +772,12 @@ server <- function(input, output, session) {
                 Supplier = input$Supplier,
                 Order.code = input$Order.code,
                 Lot.nr = input$Lotnr,
-                Expiry.date = ifelse(identical(input$Expiry.date,NA),"",
+                Expiry.date = ifelse(is_empty(input$Expiry.date),"",
                                      gsub("-\\d\\d$","",as.character(input$Expiry.date))),
                 Category = input$Category,
                 Location = input$Location,
                 Comments = input$Comment,
-                entryDate = ifelse(identical(input$enterDate,NA),"",
+                entryDate = ifelse(is_empty(input$enterDate),"",
                                    as.character(input$enterDate)),
                 exitDate = NA,
                 AnimalByproduct = input$ABP
@@ -866,7 +867,7 @@ server <- function(input, output, session) {
     #  ---- administration page ---- not active !!
     # shows the current database filename
     output$fileName <- renderText({paste("Current database: ",rv$fileName, sep = "")})
-
+    
     #  ---- administration page ---- not active !!
     # shows files in the current (data-)directory
     output$fileList <- renderDataTable({
@@ -881,7 +882,7 @@ server <- function(input, output, session) {
     #  ---- administration page ---- not active !!
     # to allow interactivity with fileList
     fileListProxy <- dataTableProxy("fileList")
-
+    
     #  ---- administration page ---- not active !!
     # to be able to get yes/no questions via modal ui
     yesNoModal <- function(failed = FALSE, ynquestion = ""){
@@ -900,7 +901,7 @@ server <- function(input, output, session) {
         rv$answer <- TRUE
         removeModal()
     })
-
+    
     # question to reset the database in memory (yes/no)
     observeEvent(input$db_reload,{
         question <<- "reset"
@@ -1029,7 +1030,7 @@ server <- function(input, output, session) {
                        newOrderCodes <- currentCode[!currentCode$Order.code %in% ordering$Order.code,]
                        # known Order.code's but unknown Lot.nr's
                        newLotnrs <- currentCode[(currentCode$Order.code %in% ordering$Order.code) &
-                                                  !(currentCode$Lot.nr %in% ordering$Lot.nr),]
+                                                    !(currentCode$Lot.nr %in% ordering$Lot.nr),]
                        # combine all
                        newOrderCodes <- bind_rows(newOrderCodes, newLotnrs) %>% distinct(Order.code, Lot.nr, .keep_all = TRUE)
                        if (nrow(newOrderCodes)>0){
