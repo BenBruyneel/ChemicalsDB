@@ -571,7 +571,7 @@ server <- function(input, output, session) {
     
     # next 4 elements are for showing the current Suppliers, Units, etc
     output$showSuppliers <- renderDataTable({
-        DT::datatable(data.frame(Suppier = rv$allSuppliers, stringsAsFactors = FALSE),
+        DT::datatable(data.frame(Supplier = rv$allSuppliers, stringsAsFactors = FALSE),
                       options = list(lengthMenu = c(10,25,100),
                                      pageLength = 10,
                                      ordering = FALSE,
@@ -580,7 +580,7 @@ server <- function(input, output, session) {
     }, server = FALSE)
     
     output$showCategories <- renderDataTable({
-        DT::datatable(data.frame(Suppier = rv$allCategory, stringsAsFactors = FALSE),
+        DT::datatable(data.frame(Category = rv$allCategory, stringsAsFactors = FALSE),
                       options = list(lengthMenu = c(10,25,100),
                                      pageLength = 10,
                                      ordering = FALSE,
@@ -589,7 +589,7 @@ server <- function(input, output, session) {
     }, server = FALSE)
     
     output$showLocations <- renderDataTable({
-        DT::datatable(data.frame(Suppier = rv$allLocation, stringsAsFactors = FALSE),
+        DT::datatable(data.frame(Location = rv$allLocation, stringsAsFactors = FALSE),
                       options = list(lengthMenu = c(10,25,100),
                                      pageLength = 10,
                                      ordering = FALSE,
@@ -598,7 +598,7 @@ server <- function(input, output, session) {
     }, server = FALSE)
     
     output$showUnits <- renderDataTable({
-        DT::datatable(data.frame(Suppier = rv$allUnits, stringsAsFactors = FALSE),
+        DT::datatable(data.frame(Units = rv$allUnits, stringsAsFactors = FALSE),
                       options = list(lengthMenu = c(10,25,100),
                                      pageLength = 10,
                                      ordering = FALSE,
